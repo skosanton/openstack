@@ -3,8 +3,8 @@
 
 #ALSO YOU HAVE TO ADD SECOND DISK TO SYSTEM WITH NOTHING ON IT AND CHANGE THE NAMES OF THOSE VOLUMES IN 2 COMMANDS BELOW
 lsblk
-pvcreate /dev/sdb
-vgcreate cinder-volumes /dev/sdb
+pvcreate /dev/nvme0n1
+vgcreate cinder-volumes /dev/nvme0n1
 
 #ALSO IN activate.env.sh SCRIPT THERE IS A LINE:
 #sed -i 's/kolla_internal_vip_address: .*/kolla_internal_vip_address: "10.0.0.233"/' /etc/kolla/globals.yml
@@ -24,7 +24,7 @@ echo "updating ubuntu"
 apt update -y
 
 echo "installing python3-dev libffi-dev gcc libssl-dev"
-apt install python3-dev libffi-dev gcc libssl-dev -y
+apt install python3-dev libffi-dev gcc libssl-dev git -y
 
 echo "installing python3-venv and python3-pip"
 apt install python3-venv python3-pip -y

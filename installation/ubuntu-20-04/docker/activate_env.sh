@@ -46,21 +46,25 @@ kolla-genpwd
 echo "configuring kolla's openstack files"
 sed -i 's/.kolla_base_distro:.*/kolla_base_distro: "ubuntu"/' /etc/kolla/globals.yml
 sed -i 's/.kolla_install_type:.*/kolla_install_type: "source"/' /etc/kolla/globals.yml
-interface=$(ip route | grep "default via" |sed -r 's/default via [0-9].* dev //g; s/ .*//g')
-sed -i 's/^network_interface:.*/network_interface: '\""${interface}"\"'/' /etc/kolla/globals.yml
-interface1=$(echo "$interface" | sed -r 's/0/1/g')
-sed -i 's/.neutron_external_interface: .*/neutron_external_interface: '\""${interface1}"\"'/' /etc/kolla/globals.yml
+#interface=$(ip route | grep "default via" |sed -r 's/default via [0-9].* dev //g; s/ .*//g')
+sed -i 's/.network_interface: .*/network_interface: "wlp5s0"/' /etc/kolla/globals.yml
+#interface1=$(echo "$interface" | sed -r 's/0/1/g')
+sed -i 's/.neutron_external_interface: .*/neutron_external_interface: "vr-br"/' /etc/kolla/globals.yml
 sed -i 's/^#kolla_internal_vip_address: /kolla_internal_vip_address: /' /etc/kolla/globals.yml
 sed -i 's/^#enable_openstack_core: .*/enable_openstack_core: "yes"/' /etc/kolla/globals.yml
 sed -i 's/^#enable_cinder: .*/enable_cinder: "yes"/' /etc/kolla/globals.yml
 sed -i 's/^#enable_cinder_backend_lvm: .*/enable_cinder_backend_lvm: "yes"/' /etc/kolla/globals.yml
 sed -i 's/kolla_internal_vip_address: .*/kolla_internal_vip_address: "10.0.0.233"/' /etc/kolla/globals.yml
 sed -i 's/#kolla_internal_vip_address: /kolla_internal_vip_address: "/' /etc/kolla/globals.yml
+sed -i 's/#network_address_family: .*/network_address_family: "ipv4"/' /etc/kolla/globals.yml
+sed -i 's/- { name: "net.ipv6.ip_nonlocal_bind", value: 0 }//' /usr/kolla_python_virt_env/share/kolla-ansible/ansible/roles/loadbalancer/tasks/config-host.yml
+sed -i 's/.*"net.ipv6.*//' /usr/kolla_python_virt_env/share/kolla-ansible/ansible/roles/neutron/tasks/config-host.yml
+for x in $(find /usr/kolla_python_virt_env/share/kolla-ansible/ansible/roles/ -type f -name "*"); do sed -i 's/^.*net.ipv6.*//' $x ;done
 
 echo "deploying openstack to docker"
-kolla-ansible -i ./all-in-one bootstrap-servers
-kolla-ansible -i ./all-in-one prechecks
-kolla-ansible -i ./all-in-one deploy
+kolla-ansible -i ./all-in-one bootstrap-servers > /var/log/kolla-ansible-bootstrap-openstack
+kolla-ansible -i ./all-in-one prechecks > /var/log/kolla-ansible-prechecks-openstack
+kolla-ansible -i ./all-in-one deploy > /var/log/kolla-ansible-deploy-openstack
 
 echo "installing CLI for Yoga"
 pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/yoga
@@ -135,6 +139,9 @@ docker exec -it -uroot nova_libvirt /bin/bash -c "ls -la /var/log/kolla/libvirt/
 openstack console url show my-test-cirros-instance
 or SSH:
 ssh cirros@IP_FROM_(openstack server list)
+
+TO DESTROY:
+kolla-ansible -i ./all-in-one destroy --yes-i-really-really-mean-it
 '
 
 echo "You can now open web interface from your computer connecting to the address from network adapter below (probably eth0):"
